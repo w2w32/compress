@@ -1,0 +1,393 @@
+<!doctype HTML>
+<html>
+<head>
+<style>
+td{
+	vertical-align: top;
+}
+#can2a{
+	position:relative;
+	z-index:1;
+	opacity:0.5;
+}
+#can2{
+	position:absolute;
+}
+</style>
+<script type="text/javascript">
+var can0, ctx0, can1, ctx1, can2, ctx2, can3, ctx3, can2a, ctx2a;
+var dim=256;
+var bab = new Image();
+bab.src='';
+//bab.crossOrigin = 'Anonymous';
+function init(){
+	can0=document.getElementById("can0");
+	ctx0=can0.getContext("2d");
+	can0.height=dim;
+	can0.width=dim;
+	
+	can1=document.getElementById("can1");
+	ctx1=can1.getContext("2d");
+	can1.height=dim;
+	can1.width=dim;
+	
+	can2=document.getElementById("can2");
+	ctx2=can2.getContext("2d");
+	can2.height=dim;
+	can2.width=dim;
+	
+	can2a=document.getElementById("can2a");
+	ctx2a=can2a.getContext("2d");
+	can2a.height=dim;
+	can2a.width=dim;
+	
+	can3=document.getElementById("can3");
+	ctx3=can3.getContext("2d");
+	can3.height=dim;
+	can3.width=dim;
+	
+	generate_roots(dim);
+
+	ctx0.fillRect(0,0,dim,dim);
+	draw_input();
+	ctx0.fillStyle = '#fff';
+	
+	can0.addEventListener("mousedown",function(){nowDrawing=true});
+	can0.addEventListener("mouseup",function(){nowDrawing=false});
+
+	can2a.addEventListener("mousedown",function(){nowDrawing2a=true});
+	can2a.addEventListener("mouseup",function(){nowDrawing2a=false});
+	//can2a.addEventListener("mouseout",function(){nowDrawing2a=false});
+
+	can0.addEventListener("mousemove",mouseUpdate);
+	can2a.addEventListener("mousemove",mouseUpdate);
+
+	can0.addEventListener("dblclick",drawFFT);
+	
+	
+	var vt = [[0,0],[0,2],[Math.sqrt(3),1],[Math.sqrt(3),-1],[0,-2],[-Math.sqrt(3),-1],[-Math.sqrt(3),1]];
+	for(let i=0;i<vt.length;i++){
+		vt[i][0] *=dim/6;
+		vt[i][1] *=dim/6;
+		vt[i][0] +=dim/2;
+		vt[i][1] +=dim/2;
+
+	}
+	ctx0.fillStyle = '#888'
+	ctx0.beginPath();
+	ctx0.lineTo.apply(ctx0, vt[0]);
+	ctx0.lineTo.apply(ctx0, vt[1]);
+	ctx0.lineTo.apply(ctx0, vt[2]);
+	ctx0.lineTo.apply(ctx0, vt[3]);
+	ctx0.fill();
+	ctx0.closePath();
+	
+	ctx0.fillStyle = '#aaa'
+	ctx0.beginPath();
+	ctx0.lineTo.apply(ctx0, vt[0]);
+	ctx0.lineTo.apply(ctx0, vt[3]);
+	ctx0.lineTo.apply(ctx0, vt[4]);
+	ctx0.lineTo.apply(ctx0, vt[5]);
+	ctx0.fill();
+	ctx0.closePath();
+	
+	ctx0.fillStyle = '#555'
+	ctx0.beginPath();
+	ctx0.lineTo.apply(ctx0, vt[0]);
+	ctx0.lineTo.apply(ctx0, vt[5]);
+	ctx0.lineTo.apply(ctx0, vt[6]);
+	ctx0.lineTo.apply(ctx0, vt[1]);
+	ctx0.fill();
+	ctx0.closePath();
+}
+var nowDrawing=false;
+var nowDrawing2a=false;
+
+function setToBlack(e){
+	ctx0.fillStyle = '#000';
+	ctx0.fillRect(0,0,dim,dim);
+}
+function mouseUpdate(e){
+	if(nowDrawing){
+	var L = parseInt(document.getElementById('paintcolor').value).toString(16).padStart(2,'0');
+	ctx0.fillStyle = '#' + L + L + L;
+		ctx0.fillRect(e.offsetX-4,e.offsetY-4,8,8);
+	}
+	if(nowDrawing2a){
+		ctx2a.globalCompositeOperation="source-over";
+		ctx2a.fillStyle = "rgb(255,0,0)";
+		ctx2a.fillRect(e.offsetX-4,e.offsetY-4,8,8);
+		if(document.getElementById("symmetric").checked){
+			ctx2a.fillRect(e.offsetX-4,dim-4-e.offsetY,8,8);
+			ctx2a.fillRect(dim-4-e.offsetX,e.offsetY-4,8,8);
+			ctx2a.fillRect(dim-4-e.offsetX,dim-4-e.offsetY,8,8);
+		}
+	}
+}
+function invert_can2a(){
+	ctx2a.globalCompositeOperation="source-out";
+	ctx2a.fillStyle = "rgb(255,0,0)";
+	ctx2a.fillRect(0,0,dim,dim);}
+function draw_input(){
+	ctx0.strokeStyle = '#666';
+	ctx0.beginPath();
+	for(let i=-dim;i<dim;i+=4){
+		ctx0.moveTo(i,0);
+		ctx0.lineTo(i,dim);
+	}
+	//ctx0.stroke();
+}
+function cmult(a,b){
+	return([a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]]);
+}
+function cplx_array_add(a,b){
+	if(a.length === b.length){
+		let c = [];
+		for(let i=0;i<a.length;i++){
+			c.push([a[i][0]+b[i][0], a[i][1]+b[i][1]]);
+		}
+		return c;
+	}else{
+		console.log("unequal lengths");
+	}
+}
+function cplx_array_mult(a,b){
+	if(a.length === b.length){
+		let c = [];
+		for(let i=0;i<a.length;i++){
+			c.push(cmult(a[i],b[i]));
+		}
+		return c;
+	}else{
+		console.log("unequal lengths");
+		console.log(a);
+		console.log(b);
+	}
+}
+function cplx_array_scale(a, k){
+	let c=[];
+	for(let i=0;i<a.length;i++){
+		c.push([a[i][0]*k,a[i][1]*k]);
+	}
+	return c;
+}
+function cplx_array_abs(a){
+	let c = [];
+	for(let i=0;i<a.length;i++){
+		c.push(Math.sqrt(a[i][0]*a[i][0] + a[i][1]*a[i][1]));
+	}
+	return c;
+}
+function transpose(A){
+	var T = [];
+	for(let i = 0; i<A[0].length;i++){
+		T[i] = [];
+		for(let j = 0; j<A.length;j++){
+			T[i][j] = [];
+			T[i][j][0] = A[j][i][0];
+			T[i][j][1] = A[j][i][1];
+		}
+	}
+	return T;
+}
+
+var fft_roots = []
+function generate_roots(N){
+	fft_roots = [];
+	for(let i=0;i<N;i++){
+		fft_roots.push([Math.cos(2*Math.PI*i/N), Math.sin(2*Math.PI*i/N)]);
+	}
+}
+function fft(input){//complex input
+	if(input.length < 2){
+		return [input[0]];
+	}
+	const order = Math.ceil(Math.log2(input.length));
+	const N = Math.pow(2,order);
+	let x = input.slice().concat(Array(N-input.length).fill([0,0]));
+	
+	let x_even = [];
+	let x_odd = [];
+	let these_roots = [];
+	for(let i=0;i<N;i++){
+		if(i%2 === 0){
+			x_even.push(x[i]);
+		}else{
+			x_odd.push(x[i]);
+		}
+		these_roots.push(fft_roots[i*fft_roots.length/N]);
+	}
+	let evens = fft(x_even);
+	let odds = fft(x_odd);
+	evens = evens.concat(evens);
+	odds = odds.concat(odds);
+	return cplx_array_add(evens,cplx_array_mult(odds,these_roots));
+}
+function ifft(input){
+	let X = [];
+	let N = input.length;
+	for(let i=0;i<N;i++){
+		X.push([input[i][0]/N, -input[i][1]/N]);
+	}
+	let x = fft(X);
+	for(let i=0;i<N;i++){
+		x[i][1] *= -1;
+	}
+	return x;
+}
+
+generate_roots(dim);
+
+var first_line_in = "";
+var first_line_out ="";
+
+function twodee_fft(first_pass_input, inv){
+	let first_pass_output = [];
+	let second_pass_input = [];
+	let second_pass_output = [];
+	if(inv){
+		let first_pass_input_tr=transpose(first_pass_input);
+		for(let i=0;i<dim;i++){
+			first_pass_output[i] = ifft(first_pass_input_tr[i]);
+		}
+		second_pass_input = transpose(first_pass_output);
+		
+		for(let i=0;i<dim;i++){
+			second_pass_output[i] = ifft(second_pass_input[i]);
+		}
+		return transpose(second_pass_output);
+	}else{
+		for(let i=0;i<dim;i++){
+			first_pass_output[i] = fft(first_pass_input[i]);
+		}
+		second_pass_input = transpose(first_pass_output);
+		
+		for(let i=0;i<dim;i++){
+			second_pass_output[i] = fft(second_pass_input[i]);
+		}
+		return second_pass_output;
+	}
+	
+}
+
+let filter_matrix = [];
+function build_filter(){
+	for(let i=0;i<dim;i++){
+		filter_matrix[i] = [];
+		for(let j=0;j<dim;j++){
+			filter_matrix[i].push(1-ctx2a.getImageData(j,i,1,1).data[0]/255);
+		}
+	}
+	
+}
+function drawFFT(){
+	let input_data = new Array(dim);
+	
+	for(let i=0;i<dim;i++){
+		input_data[i]=[];
+		for(let j=0;j<dim;j++){
+			input_data[i].push([ctx0.getImageData(j,i,1,1).data[0],0]);
+		}
+	}
+	
+	let fft_data = twodee_fft(input_data);
+	
+	build_filter();
+	
+	putDataToCanvas(fft_data, ctx1, document.getElementById('can1select').selectedIndex);
+	
+	for(let i=0;i<dim;i++){
+		for(let j=0;j<dim;j++){
+			//let norm =dim*dim/Math.hypot(fft_data[i][j][0],fft_data[i][j][1]);
+			//fft_data[i][j] = cmult(fft_data[i][j],filter_matrix[i][j]);
+			fft_data[i][j][0] *= filter_matrix[i][j];
+			fft_data[i][j][1] *= filter_matrix[i][j];
+		}
+	}
+
+	
+	
+	putDataToCanvas(twodee_fft(fft_data,true), ctx3, 0);
+}
+
+function putDataToCanvas(data, ctx, type, scale){
+	//data=2D complex array; ctx=canvas context; type=0,1,2,3 for abs,angle,real,imag
+	let output_data = new ImageData(dim,dim);
+	for(let i=0;i<dim;i++){
+		for(let j=0;j<dim;j++){
+			let point = data[i][j];
+			let val = 0;
+			switch(type){
+				case 1:
+					val = Math.atan2(point[1],point[0])*128/(Math.PI) + 128;
+					break;
+				case 2:
+					val = point[0];
+					break;
+				case 3:
+					val = point[1];
+					break;
+				case 0:
+				default:
+					val = Math.hypot(point[0],point[1]);
+			}
+			if(scale){
+				val*=scale;
+			}
+			output_data.data[4*(dim*i + j)] = val;
+			output_data.data[4*(dim*i + j) + 1] = val;
+			output_data.data[4*(dim*i + j) + 2] = val;
+			output_data.data[4*(dim*i + j) + 3] = 255;
+
+		}
+	}
+	ctx.putImageData(output_data,0,0);
+}
+
+</script>
+</head>
+<body onload="init()" bgcolor="#cec">
+<table>
+<tr>
+<td>Original Image<br>
+<canvas id="can0"></canvas><br>
+<span>Marker Lightness</span><br>0<input type="range" id = "paintcolor" min='0' max='255'>255</input>
+
+</td>
+<td><select id="can1select">
+<option>Magnitude</option>
+<option>Angle</option>
+<option>Real Part</option>
+<option>Imaginary Part</option>
+</select> of FFT <br>
+<canvas id="can1"></canvas><br>
+</td>
+</td>
+<td>Ignored Frequencies<br>
+<canvas id="can2"></canvas>
+<canvas id="can2a"></canvas><br>
+Symmetric<input type="checkbox" checked="true" id="symmetric"></input><br>
+<button onclick="ctx2a.clearRect(0,0,dim,dim);">Clear</button><button onclick="invert_can2a()">Invert</button><br>
+</td>
+<td>Filtered Image<br>
+<canvas id="can3"></canvas></td>
+</tr>
+<tr>
+<td>
+<button onclick="drawFFT()">Go!</button>
+</td>
+<td>
+</td>
+<td>
+<select id="can2select">
+<option>Low Pass</option>
+<option>High Pass</option>
+<option>Magnitude = constant</option>
+<option>Imag = 0</option>
+</select></td>
+<td></td>
+</tr>
+</table>
+<div id="bottom"></div>
+</body>
+</html>
