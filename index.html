@@ -63,12 +63,51 @@ function init(){
 	can2a.addEventListener("mousemove",mouseUpdate);
 
 	can0.addEventListener("dblclick",drawFFT);
+
+	ctx2a.fillStyle = "rgb(255,0,0)";
 	
-	
+	ctx2a.fillRect(0,0,dim,dim);
+	//ctx2a.clearRect(20,0,dim-5,dim);
+	for(let i=0;i<dim;i+=2){
+		ctx2a.clearRect(0,i,dim,1);
+		ctx2a.clearRect(i,0,1,dim);
+	}
+	drawFFT();
+}
+var nowDrawing=false;
+var nowDrawing2a=false;
+
+function setToBlack(e){
+	ctx0.fillStyle = '#000';
+	ctx0.fillRect(0,0,dim,dim);
+}
+function mouseUpdate(e){
+	if(nowDrawing){
+	var L = parseInt(document.getElementById('paintcolor').value).toString(16).padStart(2,'0');
+	ctx0.fillStyle = '#' + L + L + L;
+		ctx0.fillRect(e.offsetX-4,e.offsetY-4,8,8);
+	}
+	if(nowDrawing2a){
+		ctx2a.globalCompositeOperation="source-over";
+		ctx2a.fillStyle = "rgb(255,0,0)";
+		ctx2a.fillRect(e.offsetX-4,e.offsetY-4,8,8);
+		if(document.getElementById("symmetric").checked){
+			ctx2a.fillRect(e.offsetX-4,dim-4-e.offsetY,8,8);
+			ctx2a.fillRect(dim-4-e.offsetX,e.offsetY-4,8,8);
+			ctx2a.fillRect(dim-4-e.offsetX,dim-4-e.offsetY,8,8);
+		}
+	}
+}
+function invert_can2a(){
+	ctx2a.globalCompositeOperation="source-out";
+	ctx2a.fillStyle = "rgb(255,0,0)";
+	ctx2a.fillRect(0,0,dim,dim);
+}
+function draw_input(){
 	var vt = [[0,0],[0,2],[Math.sqrt(3),1],[Math.sqrt(3),-1],[0,-2],[-Math.sqrt(3),-1],[-Math.sqrt(3),1]];
 	for(let i=0;i<vt.length;i++){
-		vt[i][0] *=dim/6;
-		vt[i][1] *=dim/6;
+		vt[i][0] *=dim/8;
+		vt[i][1] *=dim/8;
 		vt[i][0] +=dim/2;
 		vt[i][1] +=dim/2;
 
@@ -99,43 +138,6 @@ function init(){
 	ctx0.lineTo.apply(ctx0, vt[1]);
 	ctx0.fill();
 	ctx0.closePath();
-}
-var nowDrawing=false;
-var nowDrawing2a=false;
-
-function setToBlack(e){
-	ctx0.fillStyle = '#000';
-	ctx0.fillRect(0,0,dim,dim);
-}
-function mouseUpdate(e){
-	if(nowDrawing){
-	var L = parseInt(document.getElementById('paintcolor').value).toString(16).padStart(2,'0');
-	ctx0.fillStyle = '#' + L + L + L;
-		ctx0.fillRect(e.offsetX-4,e.offsetY-4,8,8);
-	}
-	if(nowDrawing2a){
-		ctx2a.globalCompositeOperation="source-over";
-		ctx2a.fillStyle = "rgb(255,0,0)";
-		ctx2a.fillRect(e.offsetX-4,e.offsetY-4,8,8);
-		if(document.getElementById("symmetric").checked){
-			ctx2a.fillRect(e.offsetX-4,dim-4-e.offsetY,8,8);
-			ctx2a.fillRect(dim-4-e.offsetX,e.offsetY-4,8,8);
-			ctx2a.fillRect(dim-4-e.offsetX,dim-4-e.offsetY,8,8);
-		}
-	}
-}
-function invert_can2a(){
-	ctx2a.globalCompositeOperation="source-out";
-	ctx2a.fillStyle = "rgb(255,0,0)";
-	ctx2a.fillRect(0,0,dim,dim);}
-function draw_input(){
-	ctx0.strokeStyle = '#666';
-	ctx0.beginPath();
-	for(let i=-dim;i<dim;i+=4){
-		ctx0.moveTo(i,0);
-		ctx0.lineTo(i,dim);
-	}
-	//ctx0.stroke();
 }
 function cmult(a,b){
 	return([a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]]);
@@ -366,7 +368,7 @@ function putDataToCanvas(data, ctx, type, scale){
 <td>Ignored Frequencies<br>
 <canvas id="can2"></canvas>
 <canvas id="can2a"></canvas><br>
-Symmetric<input type="checkbox" checked="true" id="symmetric"></input><br>
+Symmetric Marker<input type="checkbox" checked="true" id="symmetric"></input><br>
 <button onclick="ctx2a.clearRect(0,0,dim,dim);">Clear</button><button onclick="invert_can2a()">Invert</button><br>
 </td>
 <td>Filtered Image<br>
@@ -379,12 +381,13 @@ Symmetric<input type="checkbox" checked="true" id="symmetric"></input><br>
 <td>
 </td>
 <td>
-<select id="can2select">
+<!--<select id="can2select">
 <option>Low Pass</option>
 <option>High Pass</option>
 <option>Magnitude = constant</option>
 <option>Imag = 0</option>
-</select></td>
+</select>-->
+</td>
 <td></td>
 </tr>
 </table>
